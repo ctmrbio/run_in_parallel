@@ -38,10 +38,10 @@ def parse_commandline():
         help=("Specify node memory size [default let Slurm decide]. "
               "Several options available, e.g.: "
               "mem64GB, mem128GB, mem256GB, mem512GB, usage_mail. "
-              "Combine options with '&', e.g. mem128GB&usage_mail"))
-    slurm.add_argument("-J", 
-        default="parallel_job",
-        help="Slurm job name [%(default)s].")
+              "Combine options with '&', e.g. 'mem128GB&usage_mail'."))
+    slurm.add_argument("-J", metavar="jobname",
+        default="",
+        help="Slurm job name [query file name].")
 
     program_parser = parser.add_argument_group("PROGRAM", "Command to run in parallel.")
     program_parser.add_argument("--call", required=True,
@@ -70,27 +70,38 @@ def parse_commandline():
 
 def generate_sbatch_scripts(options):
     """Generate sbatch scripts.
+
+    The default Slurm job name is the name of the first query file name in the
+    produced job script. 
     """
 
     while options.query:
         query_files_in_script = []
+        calls = []
+        for query_file in options.query[0:options.stack]:
+            options.query.pop(0)
+            query_files_in_script.append(query_file)
+            call = options.call.format(query=query_file)
+            calls.append(call)
+
         sbatch_script = ["#!/usr/bin/env bash",
             "# Job script automatically generated using run_in_parallel.py",
             "#SBATCH -n {n}".format(n=options.n),
             "#SBATCH -p {p}".format(p=options.p),
             "#SBATCH -A {A}".format(A=options.A),
             "#SBATCH -t {t}".format(t=options.t),
-            "#SBATCH -J {J}".format(J=options.J)]
+            ]
         if options.N:
             sbatch_script.append("#SBATCH -N {N}".format(N=options.N))
         if options.C:
             sbatch_script.append("#SBATCH -C {C}".format(C=options.C))
-        
-        for query_file in options.query[0:options.stack]:
-            options.query.pop(0)
-            query_files_in_script.append(query_file)
-            call = options.call.format(query=query_file)
-            sbatch_script.append(call)
+        if options.J:
+            sbatch_script.append("#SBATCH -J {J}".format(J=options.J))
+        else:
+            # No job name specified; use first query file in script
+            sbatch_script.append("#SBATCH -J {J}".format(J=query_files_in_script[0]))
+
+        [sbatch_script.append(c) for c in calls]
 
         yield "\n".join(sbatch_script), query_files_in_script
 
@@ -99,6 +110,7 @@ def generate_sbatch_scripts(options):
 def call_sbatch(sbatch_script):
     """Run sbatch in a subprocess.
     """
+    print(sbatch_script)
 
     sbatch = Popen("sbatch", stdin=PIPE, stdout=PIPE, stderr=PIPE)
     out, err = sbatch.communicate(sbatch_script.encode("utf-8"))
