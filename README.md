@@ -1,8 +1,8 @@
 # README #
 
-This script on a SLURM managed cluster such as [UPPMAX](http://uppmax.uu.se) to
-start run simple command in parallel across several cores and nodes in a simple
-way.
+This script can be used on a SLURM managed cluster such as
+[UPPMAX](http://uppmax.uu.se) to run simple command in parallel across several
+cores and nodes in a simple way.
 
 ## Overview of features ##
 
