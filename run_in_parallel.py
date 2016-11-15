@@ -110,7 +110,6 @@ def generate_sbatch_scripts(options):
 def call_sbatch(sbatch_script):
     """Run sbatch in a subprocess.
     """
-    print(sbatch_script)
 
     sbatch = Popen("sbatch", stdin=PIPE, stdout=PIPE, stderr=PIPE)
     out, err = sbatch.communicate(sbatch_script.encode("utf-8"))
