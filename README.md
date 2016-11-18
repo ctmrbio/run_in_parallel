@@ -8,13 +8,13 @@ cores and nodes in a simple way.
 
 ### Run single command on one node per file ###
 
- ``` run_in_parallel.py --call 'echo {query}' file1 file2 file3 ```. 
+ ``` run_in_parallel.py --call 'echo {query}' file1 file2 file3 ```
 
 This submits three batch jobs via Slurm.
 
 ### Stack single command for N files per node ###
 
- ``` run_in_parallel.py --call 'echo {query}&' --stack 2 file1 file2 file3 ```. 
+ ``` run_in_parallel.py --call 'echo {query}&' --stack 2 file1 file2 file3 ```
 
 This submits two batch jobs via Slurm, where the first runs the command on
 file1 and file2 simultaneously, and the second node only runs on file3. Note
@@ -23,11 +23,28 @@ sequence on each resource.
 
 ### Run composite command on one node per file ###
 
- ``` run_in_parallel.py --call 'cp ~/database.fasta $TMPDIR; cd $TMPDIR; heavy_processing -input={query} -db=database.fasta -out={query}.output; cp {query}.output ~/results' file1 file2 file3 ```. 
+ ``` run_in_parallel.py --call 'cp ~/database.fasta $TMPDIR; cd $TMPDIR; heavy_processing -input={query} -db=database.fasta -out={query}.output; cp {query}.output ~/results' file1 file2 file3 ```
  
-This copies a big database to the `$TMPDIR` on each node, then changes dir to the
-`$TMPDIR` and runs heavy_processing in the `$TMPDIR`, then copies the results back
-to the user home dir.
+This copies a big database to the `$TMPDIR` on each node, changes dir to
+`$TMPDIR`, runs heavy_processing in `$TMPDIR`, then copies the results back to
+the user home dir.
+
+### Automatic copy/decompress to $TMPDIR
+
+ ``` run_in_parallel.py --copy-decompress --call 'analyze_fastq {query} > {cwd}{query}.results' file1.fastq.gz file2.fastq.bz2 file3.dsrc ```
+
+This automatically copies or decompressed the query file to `$TMPDIR`, and the
+working directory is changed to `$TMPDIR` before running the command. `{query}`
+is replaced by the decompressed file name. `{cwd}` is replaced with the working
+directory from which `run_in_parallel.py` was called, complete with trailing
+`/`, making it easy to produce output files relative to the calling directory.
+
+Filenames ending with `.gz`, `.bz2`, or `.dsrc` are decompressed directly to
+`$TMPDIR` (no intermediate copying of the compressed file). Other files are 
+just copied as is. 
+
+
+### Caution
 
 Note that the script is *stupid*, makes a lot of assumptions, and has no error
 correction---so make sure you spell the command correctly. Also note that this
@@ -39,7 +56,6 @@ Run the script and give any number of files as command line arguments. The call
 should be enclosed in single quotes. Example:
 
 ```
-#!bash
 $ ls sequence_files
 reads1.fasta reads2.fasta reads3.fasta something_else.txt annotation.gff
 $ run_in_parallel.py --call 'blat ~/databases/bacterial_genomes.fasta {query} -out=blast8 {query}.blast8' sequence_files/*.fasta 
@@ -66,7 +82,6 @@ Clone the repository and symlink the run_in_parallel.py script in your ~/bin
 folder:
 
 ```
-#!bash
 $ git clone https://github.com/ctmr/run_in_parallel 
 $ ln -s ~/run_in_parallel/run_in_parallel.py ~/bin
 ```
@@ -77,7 +92,6 @@ many files as command line arguments. The call is a simple `hello world` in
 this example.
 
 ```
-#!bash
 $ ls files_to_run
 job1 job2 job3
 $ run_in_parallel.py --call 'echo "Hello from {query}!"' files_to_run/*
@@ -92,7 +106,6 @@ we just see the printout in the stdout from the nodes which are available in
 the call directory after job completion.
 
 ```
-#!bash
 $ cat slurm*.out 
 Hello from job2!
 Hello from job1!

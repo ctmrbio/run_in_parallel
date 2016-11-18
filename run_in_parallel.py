@@ -4,6 +4,7 @@
 
 from sys import argv, exit
 from subprocess import Popen, PIPE
+import os
 import argparse
 
 
@@ -42,6 +43,10 @@ def parse_commandline():
     slurm.add_argument("-J", metavar="jobname",
         default="",
         help="Slurm job name [query file name].")
+    slurm.add_argument("--dryrun", action="store_true",
+        default=False,
+        help="""Perform a dry run, i.e. print job scripts to STDOUT
+                and do not call Slurm [%(default)s].""")
 
     program_parser = parser.add_argument_group("PROGRAM", "Command to run in parallel.")
     program_parser.add_argument("--call", required=True,
@@ -55,6 +60,11 @@ def parse_commandline():
         help="""Stack N calls on each node. Remember to end your
                 command with '&' so the commands are run simultaneously 
                 [%(default)s].""")
+    program_parser.add_argument("--copy-decompress", dest="copy_decompress",
+        default=False,
+        action="store_true",
+        help="""Copy query file to $TMPDIR on node and decompress (if
+                necessary) before running command [%(default)s].""")
     program_parser.add_argument("query", nargs="+", metavar="FILE",
         default="",
         help="Query file(s).")
@@ -68,6 +78,25 @@ def parse_commandline():
 
 
 
+def copy_decompress(source_fn):
+    """Generate bash code to copy/decompress file to $TMPDIR.
+    """
+    new_fn = os.path.basename(source_fn)
+    if source_fn.lower().endswith(".gz"):
+        new_fn = new_fn.strip(".gz")
+        cmd = "gunzip -C {source_fn} > $TMPDIR/{new_fn}"
+    elif source_fn.lower().endswith(".bz2"):
+        new_fn = new_fn.strip(".bz2")
+        cmd = "bzip2 -dc {source_fn} > $TMPDIR/{new_fn}"
+    elif source_fn.lower().endswith(".dsrc"):
+        new_fn = new_fn.strip(".dsrc")
+        cmd = "dsrc d {source_fn} $TMPDIR/{new_fn}"
+    else:
+        cmd = "cp {source_fn} $TMPDIR/{new_fn}"
+    cmd = "\n".join([cmd, "cd $TMPDIR"])
+    return cmd.format(source_fn=source_fn, new_fn=new_fn), new_fn
+
+
 def generate_sbatch_scripts(options):
     """Generate sbatch scripts.
 
@@ -78,10 +107,15 @@ def generate_sbatch_scripts(options):
     while options.query:
         query_files_in_script = []
         calls = []
+        cwd = os.getcwd()+"/"
+
         for query_file in options.query[0:options.stack]:
             options.query.pop(0)
             query_files_in_script.append(query_file)
-            call = options.call.format(query=query_file)
+            if options.copy_decompress:
+                cp_cmd, query_file = copy_decompress(query_file)
+                calls.append(cp_cmd)
+            call = options.call.format(query=query_file, cwd=cwd)
             calls.append(call)
 
         sbatch_script = ["#!/usr/bin/env bash",
@@ -121,9 +155,12 @@ def call_sbatch(sbatch_script):
 if __name__ == "__main__":
     options = parse_commandline()
     for sbatch_script, query_files in generate_sbatch_scripts(options):
-        call_sbatch(sbatch_script)
-        if len(query_files) > 1:
-            print("Submitted stacked Slurm job for {num} files: '{names}'".format(num=len(query_files), 
-                    names="', '".join(query_files)))
+        if options.dryrun:
+            print(sbatch_script)
         else:
-            print("Submitted Slurm job for: '{name}'".format(name=query_files[0]))
+            call_sbatch(sbatch_script)
+            if len(query_files) > 1:
+                print("Submitted stacked Slurm job for {num} files: '{names}'".format(num=len(query_files), 
+                        names="', '".join(query_files)))
+            else:
+                print("Submitted Slurm job for: '{name}'".format(name=query_files[0]))
