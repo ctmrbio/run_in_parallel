@@ -12,62 +12,63 @@ def parse_commandline():
     """Parse commandline.
     """
 
-    desc= ("Run in parallel on UPPMAX using Slurm sbatch. "
-           "Fredrik Boulund (c) 2014, 2015, 2016.")
+    desc = """Run in parallel on UPPMAX using Slurm sbatch.
+              Fredrik Boulund (c) 2014, 2015, 2016."""
 
     parser = argparse.ArgumentParser(description=desc)
 
     slurm = parser.add_argument_group("SLURM", "Set slurm parameters.")
     slurm.add_argument("-n", type=int, metavar="n",
-        default=1,
-        help="Number of cores. [%(default)s].")
+            default=1,
+            help="Number of cores. [%(default)s].")
     slurm.add_argument("-N", type=int, metavar="N",
-        default=0,
-        help="Number of nodes [%(default)s]. Setting N>0 will require 'n mod 16 = 0'.")
+            default=0,
+            help="""Number of nodes [%(default)s]. 
+                    Setting N>0 will require 'n mod 16 = 0'.""")
     slurm.add_argument("-p", metavar="p",
-        choices=["core", "node", "devel", "devcore"],
-        default="core",
-        help="Slurm partition [%(default)s].")
+            choices=["core", "node", "devel", "devcore"],
+            default="core",
+            help="Slurm partition [%(default)s].")
     slurm.add_argument("-A", metavar="account",
-        default="b2016371",
-        help="Slurm account [%(default)s].")
+            default="b2016371",
+            help="Slurm account [%(default)s].")
     slurm.add_argument("-t", metavar="t",
-        default="01:00:00",
-        help="Max runtime per job [%(default)s].")
+            default="01:00:00",
+            help="Max runtime per job [%(default)s].")
     slurm.add_argument("-C", 
-        default="",
-        help=("Specify node memory size [default let Slurm decide]. "
-              "Several options available, e.g.: "
-              "mem64GB, mem128GB, mem256GB, mem512GB, usage_mail. "
-              "Combine options with '&', e.g. 'mem128GB&usage_mail'."))
+            default="",
+            help="""Specify node memory size [default let Slurm decide].
+                  Several options available, e.g.: 
+                  mem64GB, mem128GB, mem256GB, mem512GB, usage_mail. 
+                  Combine options with '&', e.g. 'mem128GB&usage_mail'.""")
     slurm.add_argument("-J", metavar="jobname",
-        default="",
-        help="Slurm job name [query file name].")
+            default="",
+            help="Slurm job name [query file name].")
     slurm.add_argument("--dryrun", action="store_true",
-        default=False,
-        help="""Perform a dry run, i.e. print job scripts to STDOUT
-                and do not call Slurm [%(default)s].""")
+            default=False,
+            help="""Perform a dry run, i.e. print job scripts to STDOUT
+                    and do not call Slurm [%(default)s].""")
 
-    program_parser = parser.add_argument_group("PROGRAM", "Command to run in parallel.")
+    program_parser = parser.add_argument_group("COMMAND", "Command to run in parallel.")
     program_parser.add_argument("--call", required=True,
-        default="",
-        help="""Program and arguments in a single-quoted string,
-                e.g. 'blat dbfile.fasta {query} -t=dnax q=prot {query}.blast8'.
-                {query} is substituted for the filenames specified on
-                as arguments to run_in_parallel.py (one file per Slurm job).""")
+            default="",
+            help="""Program and arguments in a single-quoted string,
+                    e.g. 'blat dbfile.fasta {query} -t=dnax q=prot {query}.blast8'.
+                    {query} is substituted for the filenames specified on
+                    as arguments to run_in_parallel.py (one file per Slurm job).""")
     program_parser.add_argument("--stack", type=int, metavar="N",
-        default=1,
-        help="""Stack N calls on each node. Remember to end your
-                command with '&' so the commands are run simultaneously 
-                [%(default)s].""")
+            default=1,
+            help="""Stack N calls on each node. Remember to end your
+                    command with '&' so the commands are run simultaneously 
+                    [%(default)s].""")
     program_parser.add_argument("--copy-decompress", dest="copy_decompress",
-        default=False,
-        action="store_true",
-        help="""Copy query file to $TMPDIR on node and decompress (if
-                necessary) before running command [%(default)s].""")
+            default=False,
+            action="store_true",
+            help="""Copy query file to $TMPDIR on node and decompress (if
+                    necessary) before running command [%(default)s].""")
     program_parser.add_argument("query", nargs="+", metavar="FILE",
-        default="",
-        help="Query file(s).")
+            default="",
+            help="Query file(s).")
 
     if len(argv)<2:
         parser.print_help()
@@ -97,6 +98,7 @@ def copy_decompress(source_fn):
     return cmd.format(source_fn=source_fn, new_fn=new_fn), new_fn
 
 
+
 def generate_sbatch_scripts(options):
     """Generate sbatch scripts.
 
@@ -119,12 +121,12 @@ def generate_sbatch_scripts(options):
             calls.append(call)
 
         sbatch_script = ["#!/usr/bin/env bash",
-            "# Job script automatically generated using run_in_parallel.py",
-            "#SBATCH -n {n}".format(n=options.n),
-            "#SBATCH -p {p}".format(p=options.p),
-            "#SBATCH -A {A}".format(A=options.A),
-            "#SBATCH -t {t}".format(t=options.t),
-            ]
+                "# Automatically generated by run_in_parallel.py",
+                "#SBATCH -n {n}".format(n=options.n),
+                "#SBATCH -p {p}".format(p=options.p),
+                "#SBATCH -A {A}".format(A=options.A),
+                "#SBATCH -t {t}".format(t=options.t),
+                ]
         if options.N:
             sbatch_script.append("#SBATCH -N {N}".format(N=options.N))
         if options.C:
@@ -160,7 +162,8 @@ if __name__ == "__main__":
         else:
             call_sbatch(sbatch_script)
             if len(query_files) > 1:
-                print("Submitted stacked Slurm job for {num} files: '{names}'".format(num=len(query_files), 
+                print("Submitted stacked Slurm job for {num} files: '{names}'".format(
+                        num=len(query_files), 
                         names="', '".join(query_files)))
             else:
                 print("Submitted Slurm job for: '{name}'".format(name=query_files[0]))
