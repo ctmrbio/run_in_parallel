@@ -23,7 +23,7 @@ sequence on each resource.
 
 ### Run composite command on one node per file ###
 
- ``` run_in_parallel.py --call 'cp ~/database.fasta $TMPDIR; cd $TMPDIR; heavy_processing -input={query} -db=database.fasta -out={query}.output; cp {query}.output ~/results' file1 file2 file3 ```
+ ``` run_in_parallel.py -N 1 -n 16 --call 'cp ~/database.fasta $TMPDIR; cd $TMPDIR; heavy_processing -input={query} -db=database.fasta -out={query}.output; cp {query}.output ~/results' file1 file2 file3 ```
  
 This copies a big database to the `$TMPDIR` on each node, changes dir to
 `$TMPDIR`, runs heavy_processing in `$TMPDIR`, then copies the results back to
