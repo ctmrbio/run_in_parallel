@@ -29,6 +29,16 @@ This copies a big database to the `$TMPDIR` on each node, changes dir to
 `$TMPDIR`, runs heavy_processing in `$TMPDIR`, then copies the results back to
 the user home dir.
 
+### Read queries from FILE instead of arguments on the command line ###
+
+ ``` run_in_parallel.py --file path/to/file.txt --call 'echo {query}' ```
+
+This reads queries from `path/to/file.txt`, one query per line, instead of
+taking queries as arguments on the command line. Using `-f`/`--file` ignores
+command line arguments. Be careful with spaces and other strange characters
+on the lines in `path/to/file.txt`, as they can mess up your `--call` when
+bash tries to interpret special characters in strange ways...
+
 ### Automatic copy/decompress to $TMPDIR
 
  ``` run_in_parallel.py --copy-decompress --call 'analyze_fastq {query} > {cwd}{query}.results' file1.fastq.gz file2.fastq.bz2 file3.dsrc ```
