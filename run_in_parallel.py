@@ -1,6 +1,10 @@
 #!/usr/bin/env python
-# Fredrik Boulund (c) 2014, 2015, 2016
+# Fredrik Boulund (c) 2014, 2015, 2016, 2017, 2018
 # Run a program on multiple data files on a SLURM managed cluster
+
+__author__ = "Fredrik Boulund"
+__version__ = "v2.1"
+__date__ = "2014-2018"
 
 from sys import argv, exit
 from subprocess import Popen, PIPE
@@ -12,7 +16,7 @@ def parse_commandline():
     """Parse commandline.
     """
 
-    desc = """Run in parallel on UPPMAX using Slurm sbatch.
+    desc = """Run in parallel using Slurm sbatch.
               Fredrik Boulund (c) 2014, 2015, 2016."""
 
     parser = argparse.ArgumentParser(description=desc)
@@ -66,9 +70,13 @@ def parse_commandline():
             action="store_true",
             help="""Copy query file to $TMPDIR on node and decompress (if
                     necessary) before running command [%(default)s].""")
-    program_parser.add_argument("query", nargs="+", metavar="FILE",
+    program_parser.add_argument("query", nargs="*", metavar="FILE", 
             default="",
             help="Query file(s).")
+    program_parser.add_argument("-f", "--file", metavar="FILE", dest="read_from_file",
+            default="",
+            help="Read query file(s) from FILE, one file per line. "
+                 "Overrides files given on command line if present.")
 
     if len(argv)<2:
         parser.print_help()
@@ -106,13 +114,18 @@ def generate_sbatch_scripts(options):
     produced job script. 
     """
 
-    while options.query:
+    if options.read_from_file:
+        with open(options.read_from_file) as f:
+            query_files = [line.strip() for line in f.readlines()]
+    else:
+        query_files = options.query
+    while query_files:
         query_files_in_script = []
         calls = []
         cwd = os.getcwd()+"/"
 
-        for query_file in options.query[0:options.stack]:
-            options.query.pop(0)
+        for query_file in query_files[0:options.stack]:
+            query_files.pop(0)
             query_files_in_script.append(query_file)
             if options.copy_decompress:
                 cp_cmd, query_file = copy_decompress(query_file)
