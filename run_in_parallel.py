@@ -16,8 +16,8 @@ def parse_commandline():
     """Parse commandline.
     """
 
-    desc = """Run in parallel using Slurm sbatch.
-              Fredrik Boulund (c) 2014, 2015, 2016."""
+    desc = """Run in parallel (RIP), version {ver}.
+              {author} (c) {date}""".format(author=__author__, date=__date__, ver=__version__)
 
     parser = argparse.ArgumentParser(description=desc)
 
