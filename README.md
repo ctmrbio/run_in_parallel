@@ -78,10 +78,10 @@ sequence_files reads1.fasta.blast8 reads2.fasta.blast8 reads3.fasta.blast8
 slurm-6132412.out slurm-6132413.out slurm-6132414.out 
 ```
 
-There is command line help available. Run without arguments, -h or --help to
-display the help text. Remember to set the -p and -A flags (Slurm partition and
-account) to whatever is relevant for your application. Always specify a
-reasonable wall clock time (-t), so that your job is allocated as soon as
+There is command line help available. Run without arguments, `-h` or `--help` to
+display the help text. Remember to set the `-p` and `-A` flags (Slurm partition
+and account) to whatever is relevant for your application. Always specify a
+reasonable wall clock time (`-t`), so that your job is allocated as soon as
 possible.
 
 
