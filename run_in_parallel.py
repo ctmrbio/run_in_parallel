@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-# Fredrik Boulund (c) 2014, 2015, 2016, 2017, 2018
+# Fredrik Boulund (c) 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021
 # Run a program on multiple data files on a SLURM managed cluster
 
 __author__ = "Fredrik Boulund"
-__version__ = "v2.1"
-__date__ = "2014-2018"
+__version__ = "v2.2"
+__date__ = "2014-2021"
 
 from sys import argv, exit
 from subprocess import Popen, PIPE
@@ -30,11 +30,10 @@ def parse_commandline():
             help="""Number of nodes [%(default)s]. 
                     Setting N>0 will require 'n mod 16 = 0'.""")
     slurm.add_argument("-p", metavar="p",
-            choices=["core", "node", "devel", "devcore"],
-            default="core",
+            default="ctmr",
             help="Slurm partition [%(default)s].")
     slurm.add_argument("-A", metavar="account",
-            default="b2016371",
+            default="bio",
             help="Slurm account [%(default)s].")
     slurm.add_argument("-t", metavar="t",
             default="01:00:00",
@@ -180,3 +179,4 @@ if __name__ == "__main__":
                         names="', '".join(query_files)))
             else:
                 print("Submitted Slurm job for: '{name}'".format(name=query_files[0]))
+
